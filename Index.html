@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Equipos Certificables</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --success-color: #27ae60;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .logo {
+            height: 60px;
+            width: auto;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        
+        .filter-box {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #219955;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e67e22;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid var(--secondary-color);
+            color: var(--secondary-color);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .btn-active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .advanced-filters {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .advanced-filters.active {
+            display: block;
+        }
+        
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-group label {
+            font-weight: 500;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: var(--dark-color);
+        }
+        
+        .filter-group input,
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .quick-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .equipment-list {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .equipment-header {
+            display: grid;
+            grid-template-columns: 100px 1fr 1fr 120px 120px 120px 120px;
+            gap: 10px;
+            padding: 15px;
+            background-color: var(--dark-color);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .equipment-item {
+            display: grid;
+            grid-template-columns: 100px 1fr 1fr 120px 120px 120px 120px;
+            gap: 10px;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+        
+        .equipment-item:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .equipment-item:hover {
+            background-color: #f0f7ff;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .status-vencido {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: var(--danger-color);
+        }
+        
+        .status-proximo {
+            background-color: rgba(243, 156, 18, 0.2);
+            color: var(--warning-color);
+        }
+        
+        .status-vigente {
+            background-color: rgba(39, 174, 96, 0.2);
+            color: var(--success-color);
+        }
+        
+        .status-sin-fecha {
+            background-color: rgba(149, 165, 166, 0.2);
+            color: #95a5a6;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #7f8c8d;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--secondary-color);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--danger-color);
+            background-color: rgba(231, 76, 60, 0.1);
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .file-input-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .results-counter {
+            background-color: var(--light-color);
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .counter-badge {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 992px) {
+            .equipment-header, .equipment-item {
+                grid-template-columns: 80px 1fr 1fr 100px 100px 100px 100px;
+            }
+            
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .equipment-header {
+                display: none;
+            }
+            
+            .equipment-item {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                padding: 15px;
+                border: 1px solid #eee;
+                border-radius: 8px;
+                margin-bottom: 10px;
+            }
+            
+            .equipment-item::before {
+                content: attr(data-label);
+                font-weight: 600;
+                margin-bottom: 5px;
+            }
+            
+            .action-buttons {
+                justify-content: flex-start;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .results-counter {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .filter-actions {
+                justify-content: center;
+            }
+            
+            .quick-filters {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-container">
+                    <!-- Los logos se cargarán desde la carpeta recursos -->
+                    <img id="coamLogo" alt="COAM Logo" class="logo">
+                    <img id="engLogo" alt="ENG Logo" class="logo">
+                </div>
+                <h1>Gestión de Equipos Certificables</h1>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="file-input-container">
+            <button class="btn btn-primary" id="loadFileBtn">Cargar archivo Excel</button>
+            <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">
+                Por cuestiones de seguridad de SharePoint seleccione el archivo "Equipos.xlsx" desde la carpeta xlsx/
+            </p>
+        </div>
+        
+        <div class="controls">
+            <div class="filter-box">
+                <button class="btn btn-warning" id="toggleFiltersBtn">Filtros Avanzados</button>
+                <button class="btn btn-success" id="altaEquipoBtn">Solicitar alta de equipo</button>
+            </div>
+        </div>
+
+        <!-- Filtros rápidos -->
+        <div class="quick-filters">
+            <button class="btn btn-outline" id="showAllBtn">Todos los Equipos</button>
+            <button class="btn btn-danger" id="showVencidosBtn">Equipos Vencidos</button>
+            <button class="btn btn-warning" id="showProximosBtn">Próximos a Vencer</button>
+            <button class="btn btn-success" id="showVigentesBtn">Equipos Vigentes</button>
+        </div>
+        
+        <!-- Filtros avanzados -->
+        <div class="advanced-filters" id="advancedFilters">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="tagFilter">TAG</label>
+                    <input type="text" id="tagFilter" placeholder="Filtrar por TAG...">
+                </div>
+                <div class="filter-group">
+                    <label for="descripcionFilter">Descripción</label>
+                    <input type="text" id="descripcionFilter" placeholder="Filtrar por descripción...">
+                </div>
+                <div class="filter-group">
+                    <label for="responsableFilter">Responsable</label>
+                    <input type="text" id="responsableFilter" placeholder="Filtrar por responsable...">
+                </div>
+                <div class="filter-group">
+                    <label for="modeloFilter">Modelo</label>
+                    <input type="text" id="modeloFilter" placeholder="Filtrar por modelo...">
+                </div>
+                <div class="filter-group">
+                    <label for="fabricanteFilter">Fabricante</label>
+                    <input type="text" id="fabricanteFilter" placeholder="Filtrar por fabricante...">
+                </div>
+                <div class="filter-group">
+                    <label for="zonaFilter">Zona</label>
+                    <input type="text" id="zonaFilter" placeholder="Filtrar por zona...">
+                </div>
+                <div class="filter-group">
+                    <label for="gerenciaFilter">Gerencia</label>
+                    <input type="text" id="gerenciaFilter" placeholder="Filtrar por gerencia...">
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-primary btn-small" id="applyFiltersBtn">Aplicar Filtros</button>
+                <button class="btn btn-small" id="clearFiltersBtn">Limpiar Filtros</button>
+            </div>
+        </div>
+        
+        <div class="results-counter" id="resultsCounter" style="display: none;">
+            <span>Mostrando <span id="filteredCount">0</span> de <span id="totalCount">0</span> equipos</span>
+            <span class="counter-badge" id="counterBadge">0 equipos</span>
+        </div>
+        
+        <div class="equipment-list" id="equipmentList">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Esperando carga de archivo Excel...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let equipmentData = [];
+        let filteredData = [];
+        let currentFilter = 'all';
+        
+        // Función para cargar y procesar el archivo Excel
+        function loadExcelData() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.xlsx, .xls';
+            
+            fileInput.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                document.getElementById('equipmentList').innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Procesando archivo...</p>
+                    </div>
+                `;
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        
+                        // Intentar encontrar la hoja correcta
+                        let worksheet;
+                        if (workbook.Sheets['Datos']) {
+                            worksheet = workbook.Sheets['Datos'];
+                        } else {
+                            // Tomar la primera hoja si no existe "Datos"
+                            const firstSheetName = workbook.SheetNames[0];
+                            worksheet = workbook.Sheets[firstSheetName];
+                        }
+                        
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                        
+                        // Procesar los datos
+                        processEquipmentData(jsonData);
+                    } catch (error) {
+                        console.error('Error al procesar el archivo:', error);
+                        document.getElementById('equipmentList').innerHTML = `
+                            <div class="error-state">
+                                <h3>Error al cargar el archivo</h3>
+                                <p>Por favor, asegúrese de que el archivo es válido y tiene el formato correcto.</p>
+                                <p>Error: ${error.message}</p>
+                            </div>
+                        `;
+                    }
+                };
+                
+                reader.onerror = function() {
+                    document.getElementById('equipmentList').innerHTML = `
+                        <div class="error-state">
+                            <h3>Error al leer el archivo</h3>
+                            <p>No se pudo leer el archivo seleccionado.</p>
+                        </div>
+                    `;
+                };
+                
+                reader.readAsArrayBuffer(file);
+            };
+            
+            fileInput.click();
+        }
+        
+        // Función para procesar los datos del equipo
+        function processEquipmentData(data) {
+            if (data.length < 2) {
+                document.getElementById('equipmentList').innerHTML = `
+                    <div class="empty-state">
+                        <h3>No se encontraron datos</h3>
+                        <p>El archivo no contiene datos válidos.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Obtener encabezados (primera fila)
+            const headers = data[0];
+            
+            // Procesar filas de datos
+            equipmentData = [];
+            
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (row.length === 0 || !row[0]) continue; // Saltar filas vacías o sin TAG
+                
+                const equipment = {};
+                
+                // Mapear cada columna a su encabezado correspondiente
+                headers.forEach((header, index) => {
+                    equipment[header] = row[index] || '';
+                });
+                
+                // Calcular estado de certificación
+                const fechaCertificacion = equipment['Fecha de Certificación'];
+                const vencimientoCertificacion = equipment['Vencimiento de Certificación'];
+                
+                let estado = 'sin-fecha';
+                let diasRestantes = null;
+                
+                // Procesar fecha de vencimiento
+                if (vencimientoCertificacion) {
+                    const fechaVencimiento = parseExcelDate(vencimientoCertificacion);
+                    if (fechaVencimiento && !isNaN(fechaVencimiento.getTime())) {
+                        const hoy = new Date();
+                        hoy.setHours(0, 0, 0, 0); // Normalizar a inicio del día
+                        
+                        const diferencia = fechaVencimiento - hoy;
+                        diasRestantes = Math.ceil(diferencia / (1000 * 60 * 60 * 24));
+                        
+                        if (diasRestantes < 0) {
+                            estado = 'vencido';
+                        } else if (diasRestantes <= 30) {
+                            estado = 'proximo';
+                        } else {
+                            estado = 'vigente';
+                        }
+                    }
+                }
+                
+                equipment.estado = estado;
+                equipment.diasRestantes = diasRestantes;
+                
+                equipmentData.push(equipment);
+            }
+            
+            // Inicializar datos filtrados
+            filteredData = [...equipmentData];
+            
+            // Actualizar contador
+            updateResultsCounter();
+            
+            // Renderizar la lista de equipos
+            renderEquipmentList(filteredData);
+            
+            console.log('Datos cargados:', equipmentData.length, 'equipos');
+        }
+        
+        // Función para parsear fechas desde Excel
+        function parseExcelDate(dateValue) {
+            if (!dateValue) return null;
+            
+            try {
+                // Si es un objeto Date directamente
+                if (dateValue instanceof Date) {
+                    return new Date(dateValue);
+                }
+                
+                // Si es un string, intentar diferentes formatos
+                if (typeof dateValue === 'string') {
+                    // Formato español: "04/06/2025" o "04/06/2025 00:00:00"
+                    if (dateValue.includes('/')) {
+                        // Extraer solo la parte de la fecha (DD/MM/YYYY)
+                        const datePart = dateValue.split(' ')[0];
+                        const [day, month, year] = datePart.split('/').map(Number);
+                        const fecha = new Date(year, month - 1, day);
+                        return fecha;
+                    }
+                    
+                    // Formato: "2025-06-04 00:00:00"
+                    if (dateValue.includes('-') && dateValue.includes(':')) {
+                        // Extraer solo la parte de la fecha (YYYY-MM-DD)
+                        const datePart = dateValue.split(' ')[0];
+                        const [year, month, day] = datePart.split('-').map(Number);
+                        const fecha = new Date(year, month - 1, day);
+                        return fecha;
+                    }
+                    
+                    // Intentar parseo directo
+                    const parsedDate = new Date(dateValue);
+                    if (!isNaN(parsedDate.getTime())) {
+                        return parsedDate;
+                    }
+                }
+                
+                // Si es un número (días desde 1900-01-01 en Excel)
+                if (typeof dateValue === 'number') {
+                    // Convertir desde fecha de Excel (días desde 1900-01-01)
+                    const excelEpoch = new Date(1900, 0, 1);
+                    // Restamos 2 días porque Excel tiene un error histórico (considera 1900 como bisiesto)
+                    const fecha = new Date(excelEpoch.getTime() + (dateValue - 2) * 24 * 60 * 60 * 1000);
+                    return fecha;
+                }
+                
+                return null;
+            } catch (e) {
+                console.error('Error al parsear fecha:', dateValue, e);
+                return null;
+            }
+        }
+
+        // Función para renderizar la lista de equipos
+        function renderEquipmentList(data) {
+            const equipmentList = document.getElementById('equipmentList');
+            
+            if (data.length === 0) {
+                equipmentList.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No se encontraron equipos</h3>
+                        <p>No hay equipos que coincidan con los criterios de búsqueda.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = `
+                <div class="equipment-header">
+                    <div>TAG</div>
+                    <div>Descripción</div>
+                    <div>Responsable</div>
+                    <div>Fecha Cert.</div>
+                    <div>Vencimiento</div>
+                    <div>Estado</div>
+                    <div>Acciones</div>
+                </div>
+            `;
+            
+            data.forEach(equipment => {
+                const tag = equipment.TAG || 'N/A';
+                const descripcion = equipment['Descripción'] || 'N/A';
+                const responsable = equipment.Responsable || 'N/A';
+                const fechaCert = equipment['Fecha de Certificación'] ? 
+                    formatDate(equipment['Fecha de Certificación']) : 'N/A';
+                const vencimiento = equipment['Vencimiento de Certificación'] ? 
+                    formatDate(equipment['Vencimiento de Certificación']) : 'N/A';
+                
+                let estadoTexto = 'Sin fecha';
+                let estadoClase = 'status-sin-fecha';
+                
+                if (equipment.estado === 'vencido') {
+                    estadoTexto = 'Vencido';
+                    estadoClase = 'status-vencido';
+                } else if (equipment.estado === 'proximo') {
+                    estadoTexto = `${equipment.diasRestantes} días`;
+                    estadoClase = 'status-proximo';
+                } else if (equipment.estado === 'vigente') {
+                    estadoTexto = `${equipment.diasRestantes} días`;
+                    estadoClase = 'status-vigente';
+                }
+                
+                // Crear etiqueta para dispositivos móviles
+                const mobileLabel = `TAG: ${tag} | Descripción: ${descripcion} | Responsable: ${responsable} | Fecha Cert.: ${fechaCert} | Vencimiento: ${vencimiento} | Estado: ${estadoTexto}`;
+                
+                html += `
+                    <div class="equipment-item" data-label="${mobileLabel}">
+                        <div>${tag}</div>
+                        <div>${descripcion}</div>
+                        <div>${responsable}</div>
+                        <div>${fechaCert}</div>
+                        <div>${vencimiento}</div>
+                        <div><span class="status-badge ${estadoClase}">${estadoTexto}</span></div>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary btn-small" onclick="openNovedadesEmail('${tag}')">Novedades</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            equipmentList.innerHTML = html;
+        }
+
+        // Función para formatear fechas
+        function formatDate(dateValue) {
+            try {
+                // Si ya es una fecha formateada, devolverla tal cual
+                if (typeof dateValue === 'string' && dateValue.includes('/')) {
+                    return dateValue;
+                }
+                
+                const date = parseExcelDate(dateValue);
+                if (!date || isNaN(date.getTime())) return dateValue || 'N/A';
+                
+                // Formatear como DD/MM/YYYY
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const year = date.getFullYear();
+                
+                return `${day}/${month}/${year}`;
+            } catch (e) {
+                console.error('Error al formatear fecha:', dateValue, e);
+                return dateValue || 'N/A';
+            }
+        }
+        
+        // Función para actualizar el contador de resultados
+        function updateResultsCounter() {
+            const resultsCounter = document.getElementById('resultsCounter');
+            const filteredCount = document.getElementById('filteredCount');
+            const totalCount = document.getElementById('totalCount');
+            const counterBadge = document.getElementById('counterBadge');
+            
+            if (equipmentData.length > 0) {
+                resultsCounter.style.display = 'flex';
+                filteredCount.textContent = filteredData.length;
+                totalCount.textContent = equipmentData.length;
+                counterBadge.textContent = `${filteredData.length} equipos`;
+            } else {
+                resultsCounter.style.display = 'none';
+            }
+        }
+        
+        // Función para aplicar todos los filtros
+        function applyAllFilters() {
+            // Filtros avanzados
+            const tagFilter = document.getElementById('tagFilter').value.toLowerCase();
+            const descripcionFilter = document.getElementById('descripcionFilter').value.toLowerCase();
+            const responsableFilter = document.getElementById('responsableFilter').value.toLowerCase();
+            const modeloFilter = document.getElementById('modeloFilter').value.toLowerCase();
+            const fabricanteFilter = document.getElementById('fabricanteFilter').value.toLowerCase();
+            const zonaFilter = document.getElementById('zonaFilter').value.toLowerCase();
+            const gerenciaFilter = document.getElementById('gerenciaFilter').value.toLowerCase();
+            
+            filteredData = equipmentData.filter(equipment => {
+                // Filtros avanzados individuales
+                const matchesTag = !tagFilter || (equipment.TAG && equipment.TAG.toLowerCase().includes(tagFilter));
+                const matchesDescripcion = !descripcionFilter || (equipment['Descripción'] && equipment['Descripción'].toLowerCase().includes(descripcionFilter));
+                const matchesResponsable = !responsableFilter || (equipment.Responsable && equipment.Responsable.toLowerCase().includes(responsableFilter));
+                const matchesModelo = !modeloFilter || (equipment.Modelo && equipment.Modelo.toLowerCase().includes(modeloFilter));
+                const matchesFabricante = !fabricanteFilter || (equipment.Fabricante && equipment.Fabricante.toLowerCase().includes(fabricanteFilter));
+                const matchesZona = !zonaFilter || (equipment.Zona && equipment.Zona.toLowerCase().includes(zonaFilter));
+                const matchesGerencia = !gerenciaFilter || (equipment.Gerencia && equipment.Gerencia.toLowerCase().includes(gerenciaFilter));
+                
+                // Aplicar filtro de estado según el botón activo
+                let matchesEstado = true;
+                if (currentFilter === 'vencido') {
+                    matchesEstado = equipment.estado === 'vencido';
+                } else if (currentFilter === 'proximo') {
+                    matchesEstado = equipment.estado === 'proximo';
+                } else if (currentFilter === 'vigente') {
+                    matchesEstado = equipment.estado === 'vigente';
+                }
+                // Para 'all' no aplicamos filtro de estado
+                
+                return matchesEstado && 
+                       matchesTag && matchesDescripcion && matchesResponsable && 
+                       matchesModelo && matchesFabricante && matchesZona && matchesGerencia;
+            });
+            
+            // Actualizar contador
+            updateResultsCounter();
+            
+            // Renderizar lista filtrada
+            renderEquipmentList(filteredData);
+            
+            console.log('Filtros aplicados. Resultados:', filteredData.length, 'Estado activo:', currentFilter);
+        }
+        
+        // Función para limpiar todos los filtros
+        function clearAllFilters() {
+            // Limpiar filtros avanzados
+            document.getElementById('tagFilter').value = '';
+            document.getElementById('descripcionFilter').value = '';
+            document.getElementById('responsableFilter').value = '';
+            document.getElementById('modeloFilter').value = '';
+            document.getElementById('fabricanteFilter').value = '';
+            document.getElementById('zonaFilter').value = '';
+            document.getElementById('gerenciaFilter').value = '';
+            
+            // Restaurar datos originales y mostrar todos
+            filteredData = [...equipmentData];
+            currentFilter = 'all';
+            updateActiveFilterButton();
+            
+            // Actualizar contador
+            updateResultsCounter();
+            
+            // Renderizar lista completa
+            renderEquipmentList(filteredData);
+            
+            console.log('Filtros limpiados');
+        }
+        
+        // Función para actualizar el botón activo
+        function updateActiveFilterButton() {
+            // Remover clase active de todos los botones
+            document.getElementById('showAllBtn').classList.remove('btn-active');
+            document.getElementById('showVencidosBtn').classList.remove('btn-active');
+            document.getElementById('showProximosBtn').classList.remove('btn-active');
+            document.getElementById('showVigentesBtn').classList.remove('btn-active');
+            
+            // Agregar clase active al botón correspondiente
+            if (currentFilter === 'all') {
+                document.getElementById('showAllBtn').classList.add('btn-active');
+            } else if (currentFilter === 'vencido') {
+                document.getElementById('showVencidosBtn').classList.add('btn-active');
+            } else if (currentFilter === 'proximo') {
+                document.getElementById('showProximosBtn').classList.add('btn-active');
+            } else if (currentFilter === 'vigente') {
+                document.getElementById('showVigentesBtn').classList.add('btn-active');
+            }
+        }
+        
+        // Función para cargar los logos
+        function loadLogos() {
+            // Intentar cargar desde la carpeta recursos
+            const coamLogo = document.getElementById('coamLogo');
+            const engLogo = document.getElementById('engLogo');
+            
+            coamLogo.src = 'recursos/COAM-logo.png';
+            engLogo.src = 'recursos/ENG-logo.png';
+            
+            // Manejar errores de carga de imágenes
+            coamLogo.onerror = function() {
+                coamLogo.alt = 'COAM Logo (No encontrado)';
+                coamLogo.style.display = 'none';
+            };
+            
+            engLogo.onerror = function() {
+                engLogo.alt = 'ENG Logo (No encontrado)';
+                engLogo.style.display = 'none';
+            };
+        }
+        
+        // Función para abrir el correo de novedades
+        function openNovedadesEmail(tag) {
+            const equipment = equipmentData.find(e => e.TAG === tag);
+            if (!equipment) {
+                alert('No se encontró el equipo seleccionado');
+                return;
+            }
+            
+            const subject = `Novedades - Equipo ${tag}`;
+            
+            let body = `Datos del equipo:%0D%0A%0D%0A`;
+            body += `TAG: ${equipment.TAG || 'N/A'}%0D%0A`;
+            body += `Empresa: ${equipment.Empresa || 'N/A'}%0D%0A`;
+            body += `Zona: ${equipment.Zona || 'N/A'}%0D%0A`;
+            body += `Descripción: ${equipment['Descripción'] || 'N/A'}%0D%0A`;
+            body += `Gerencia: ${equipment.Gerencia || 'N/A'}%0D%0A`;
+            body += `Fabricante: ${equipment.Fabricante || 'N/A'}%0D%0A`;
+            body += `Modelo: ${equipment.Modelo || 'N/A'}%0D%0A`;
+            body += `Número de Serie: ${equipment['Numero de Serie'] || 'N/A'}%0D%0A`;
+            body += `Rango: ${equipment.Rango || 'N/A'}%0D%0A`;
+            body += `Responsable: ${equipment.Responsable || 'N/A'}%0D%0A%0D%0A`;
+            body += `Novedades:%0D%0A[Describa las novedades del equipo aquí]%0D%0A%0D%0A`;
+            body += `--%0D%0AEnviado desde la App de Gestión de Equipos Certificables - Ingeniería de mantenimiento`;
+            
+            const to = 'alberto_pedraja@coam.com.ar';
+            const cc = 'nahuel_carballido@coam.com.ar';
+            
+            window.location.href = `mailto:${to}?cc=${cc}&subject=${encodeURIComponent(subject)}&body=${body}`;
+        }
+        
+        // Función para abrir el correo de solicitud de alta de equipo
+        function openAltaEquipoEmail() {
+            const subject = 'Solicitud de Alta de Equipo';
+            
+            let body = `Solicitud de alta de nuevo equipo:%0D%0A%0D%0A`;
+            body += `TAG: [COMPLETAR]%0D%0A`;
+            body += `Empresa: [COMPLETAR]%0D%0A`;
+            body += `Zona: [COMPLETAR]%0D%0A`;
+            body += `Descripción: [COMPLETAR]%0D%0A`;
+            body += `Gerencia: [COMPLETAR]%0D%0A`;
+            body += `Fabricante: [COMPLETAR]%0D%0A`;
+            body += `Modelo: [COMPLETAR]%0D%0A`;
+            body += `Número de Serie: [COMPLETAR]%0D%0A`;
+            body += `Rango: [COMPLETAR]%0D%0A`;
+            body += `Responsable: [COMPLETAR]%0D%0A`;
+            body += `Frecuencia de Certificación: [COMPLETAR]%0D%0A`;
+            body += `Observaciones: [COMPLETAR]%0D%0A%0D%0A`;
+            body += `--%0D%0AEnviado desde la App de Gestión de Equipos Certificables - Ingeniería de mantenimiento`;
+            
+            const to = 'alberto_pedraja@coam.com.ar';
+            const cc = 'nahuel_carballido@coam.com.ar';
+            
+            window.location.href = `mailto:${to}?cc=${cc}&subject=${encodeURIComponent(subject)}&body=${body}`;
+        }
+        
+        // Inicialización cuando el DOM está listo
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cargar logos
+            loadLogos();
+            
+            // Configurar eventos
+            document.getElementById('loadFileBtn').addEventListener('click', loadExcelData);
+            document.getElementById('toggleFiltersBtn').addEventListener('click', function() {
+                document.getElementById('advancedFilters').classList.toggle('active');
+            });
+            
+            // Botones de filtros rápidos
+            document.getElementById('showAllBtn').addEventListener('click', function() {
+                currentFilter = 'all';
+                updateActiveFilterButton();
+                applyAllFilters();
+            });
+            
+            document.getElementById('showVencidosBtn').addEventListener('click', function() {
+                currentFilter = 'vencido';
+                updateActiveFilterButton();
+                applyAllFilters();
+            });
+            
+            document.getElementById('showProximosBtn').addEventListener('click', function() {
+                currentFilter = 'proximo';
+                updateActiveFilterButton();
+                applyAllFilters();
+            });
+            
+            document.getElementById('showVigentesBtn').addEventListener('click', function() {
+                currentFilter = 'vigente';
+                updateActiveFilterButton();
+                applyAllFilters();
+            });
+            
+            // Botones de filtros avanzados
+            document.getElementById('applyFiltersBtn').addEventListener('click', applyAllFilters);
+            document.getElementById('clearFiltersBtn').addEventListener('click', clearAllFilters);
+            
+            // Botón de alta de equipo
+            document.getElementById('altaEquipoBtn').addEventListener('click', openAltaEquipoEmail);
+            
+            // Aplicar filtros al cambiar cualquier campo de filtro
+            const filterInputs = [
+                'tagFilter', 'descripcionFilter', 'responsableFilter', 
+                'modeloFilter', 'fabricanteFilter', 'zonaFilter', 'gerenciaFilter'
+            ];
+            
+            filterInputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', applyAllFilters);
+            });
+            
+            // Establecer botón "Todos" como activo por defecto
+            updateActiveFilterButton();
+            
+            console.log('Aplicación inicializada correctamente');
+        });
+    </script>
+</body>
+</html>
