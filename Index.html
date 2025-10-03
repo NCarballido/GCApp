@@ -325,6 +325,13 @@
             font-weight: 600;
         }
         
+        .control-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
         @media (max-width: 992px) {
             .equipment-header, .equipment-item {
                 grid-template-columns: 80px 1fr 1fr 100px 100px 100px 100px;
@@ -381,6 +388,10 @@
             .quick-filters {
                 justify-content: center;
             }
+            
+            .control-group {
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -400,25 +411,24 @@
     
     <div class="container">
         <div class="file-input-container">
-            <button class="btn btn-primary" id="loadFileBtn">Cargar archivo Excel</button>
+            <button class="btn btn-primary" id="loadFileBtn">Cargar archivo Excel manualmente</button>
             <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">
-                Por cuestiones de seguridad de SharePoint seleccione el archivo "Equipos.xlsx" desde la carpeta xlsx/
+                La aplicación intentará cargar automáticamente el archivo "Equipos.xlsx" desde la misma ubicación.
             </p>
         </div>
         
         <div class="controls">
-            <div class="filter-box">
-                <button class="btn btn-warning" id="toggleFiltersBtn">Filtros Avanzados</button>
+            <div class="control-group">
                 <button class="btn btn-success" id="altaEquipoBtn">Solicitar alta de equipo</button>
+                <button class="btn btn-warning" id="toggleFiltersBtn">Filtros Avanzados</button>
             </div>
-        </div>
-
-        <!-- Filtros rápidos -->
-        <div class="quick-filters">
-            <button class="btn btn-outline" id="showAllBtn">Todos los Equipos</button>
-            <button class="btn btn-danger" id="showVencidosBtn">Equipos Vencidos</button>
-            <button class="btn btn-warning" id="showProximosBtn">Próximos a Vencer</button>
-            <button class="btn btn-success" id="showVigentesBtn">Equipos Vigentes</button>
+            
+            <div class="control-group">
+                <button class="btn btn-outline" id="showAllBtn">Todos los Equipos</button>
+                <button class="btn btn-danger" id="showVencidosBtn">Equipos Vencidos</button>
+                <button class="btn btn-warning" id="showProximosBtn">Próximos a Vencer</button>
+                <button class="btn btn-success" id="showVigentesBtn">Equipos Vigentes</button>
+            </div>
         </div>
         
         <!-- Filtros avanzados -->
@@ -467,7 +477,7 @@
         <div class="equipment-list" id="equipmentList">
             <div class="loading">
                 <div class="spinner"></div>
-                <p>Esperando carga de archivo Excel...</p>
+                <p>Cargando datos del archivo Excel...</p>
             </div>
         </div>
     </div>
@@ -478,7 +488,66 @@
         let filteredData = [];
         let currentFilter = 'all';
         
-        // Función para cargar y procesar el archivo Excel
+        // Función para cargar automáticamente el archivo Excel
+        function loadExcelFileAutomatically() {
+            document.getElementById('equipmentList').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Cargando datos del archivo Excel...</p>
+                </div>
+            `;
+            
+            fetch('Equipos.xlsx')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Error al cargar el archivo: ${response.status} ${response.statusText}`);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    try {
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        
+                        // Intentar encontrar la hoja correcta
+                        let worksheet;
+                        if (workbook.Sheets['Datos']) {
+                            worksheet = workbook.Sheets['Datos'];
+                        } else {
+                            // Tomar la primera hoja si no existe "Datos"
+                            const firstSheetName = workbook.SheetNames[0];
+                            worksheet = workbook.Sheets[firstSheetName];
+                        }
+                        
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                        
+                        // Procesar los datos
+                        processEquipmentData(jsonData);
+                    } catch (error) {
+                        console.error('Error al procesar el archivo:', error);
+                        document.getElementById('equipmentList').innerHTML = `
+                            <div class="error-state">
+                                <h3>Error al cargar el archivo automáticamente</h3>
+                                <p>No se pudo cargar el archivo "Equipos.xlsx" automáticamente.</p>
+                                <p>Por favor, use el botón "Cargar archivo Excel manualmente".</p>
+                                <p>Error: ${error.message}</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar el archivo:', error);
+                    document.getElementById('equipmentList').innerHTML = `
+                        <div class="error-state">
+                            <h3>Error al cargar el archivo automáticamente</h3>
+                            <p>No se pudo cargar el archivo "Equipos.xlsx" automáticamente.</p>
+                            <p>Por favor, use el botón "Cargar archivo Excel manualmente".</p>
+                            <p>Error: ${error.message}</p>
+                        </div>
+                    `;
+                });
+        }
+        
+        // Función para cargar y procesar el archivo Excel manualmente
         function loadExcelData() {
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
@@ -910,41 +979,15 @@
             body += `Gerencia: ${equipment.Gerencia || 'N/A'}%0D%0A`;
             body += `Fabricante: ${equipment.Fabricante || 'N/A'}%0D%0A`;
             body += `Modelo: ${equipment.Modelo || 'N/A'}%0D%0A`;
-            body += `Número de Serie: ${equipment['Numero de Serie'] || 'N/A'}%0D%0A`;
-            body += `Rango: ${equipment.Rango || 'N/A'}%0D%0A`;
-            body += `Responsable: ${equipment.Responsable || 'N/A'}%0D%0A%0D%0A`;
-            body += `Novedades:%0D%0A[Describa las novedades del equipo aquí]%0D%0A%0D%0A`;
-            body += `--%0D%0AEnviado desde la App de Gestión de Equipos Certificables - Ingeniería de mantenimiento`;
+            body += `Número de Serie: ${equipment['Número de Serie'] || 'N/A'}%0D%0A`;
+            body += `Responsable: ${equipment.Responsable || 'N/A'}%0D%0A`;
+            body += `Fecha de Certificación: ${equipment['Fecha de Certificación'] ? formatDate(equipment['Fecha de Certificación']) : 'N/A'}%0D%0A`;
+            body += `Vencimiento de Certificación: ${equipment['Vencimiento de Certificación'] ? formatDate(equipment['Vencimiento de Certificación']) : 'N/A'}%0D%0A`;
+            body += `%0D%0A%0D%0A`;
+            body += `Detalle de la novedad:%0D%0A%0D%0A`;
             
-            const to = 'alberto_pedraja@coam.com.ar';
-            const cc = 'nahuel_carballido@coam.com.ar';
-            
-            window.location.href = `mailto:${to}?cc=${cc}&subject=${encodeURIComponent(subject)}&body=${body}`;
-        }
-        
-        // Función para abrir el correo de solicitud de alta de equipo
-        function openAltaEquipoEmail() {
-            const subject = 'Solicitud de Alta de Equipo';
-            
-            let body = `Solicitud de alta de nuevo equipo:%0D%0A%0D%0A`;
-            body += `TAG: [COMPLETAR]%0D%0A`;
-            body += `Empresa: [COMPLETAR]%0D%0A`;
-            body += `Zona: [COMPLETAR]%0D%0A`;
-            body += `Descripción: [COMPLETAR]%0D%0A`;
-            body += `Gerencia: [COMPLETAR]%0D%0A`;
-            body += `Fabricante: [COMPLETAR]%0D%0A`;
-            body += `Modelo: [COMPLETAR]%0D%0A`;
-            body += `Número de Serie: [COMPLETAR]%0D%0A`;
-            body += `Rango: [COMPLETAR]%0D%0A`;
-            body += `Responsable: [COMPLETAR]%0D%0A`;
-            body += `Frecuencia de Certificación: [COMPLETAR]%0D%0A`;
-            body += `Observaciones: [COMPLETAR]%0D%0A%0D%0A`;
-            body += `--%0D%0AEnviado desde la App de Gestión de Equipos Certificables - Ingeniería de mantenimiento`;
-            
-            const to = 'alberto_pedraja@coam.com.ar';
-            const cc = 'nahuel_carballido@coam.com.ar';
-            
-            window.location.href = `mailto:${to}?cc=${cc}&subject=${encodeURIComponent(subject)}&body=${body}`;
+            const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${body}`;
+            window.open(mailtoLink, '_blank');
         }
         
         // Inicialización cuando el DOM está listo
@@ -955,7 +998,13 @@
             // Configurar eventos
             document.getElementById('loadFileBtn').addEventListener('click', loadExcelData);
             document.getElementById('toggleFiltersBtn').addEventListener('click', function() {
-                document.getElementById('advancedFilters').classList.toggle('active');
+                const filters = document.getElementById('advancedFilters');
+                filters.classList.toggle('active');
+                this.textContent = filters.classList.contains('active') ? 'Ocultar Filtros' : 'Filtros Avanzados';
+            });
+            
+            document.getElementById('altaEquipoBtn').addEventListener('click', function() {
+                alert('Funcionalidad de alta de equipo - En desarrollo');
             });
             
             // Botones de filtros rápidos
@@ -987,23 +1036,26 @@
             document.getElementById('applyFiltersBtn').addEventListener('click', applyAllFilters);
             document.getElementById('clearFiltersBtn').addEventListener('click', clearAllFilters);
             
-            // Botón de alta de equipo
-            document.getElementById('altaEquipoBtn').addEventListener('click', openAltaEquipoEmail);
-            
-            // Aplicar filtros al cambiar cualquier campo de filtro
+            // Aplicar filtros al escribir en los campos
             const filterInputs = [
                 'tagFilter', 'descripcionFilter', 'responsableFilter', 
                 'modeloFilter', 'fabricanteFilter', 'zonaFilter', 'gerenciaFilter'
             ];
             
             filterInputs.forEach(id => {
-                document.getElementById(id).addEventListener('input', applyAllFilters);
+                document.getElementById(id).addEventListener('input', function() {
+                    // Aplicar filtros después de un pequeño retraso para evitar procesamiento excesivo
+                    clearTimeout(this.timeout);
+                    this.timeout = setTimeout(applyAllFilters, 500);
+                });
             });
             
-            // Establecer botón "Todos" como activo por defecto
+            // Establecer el botón "Todos" como activo por defecto
             updateActiveFilterButton();
             
-            console.log('Aplicación inicializada correctamente');
+            // Intentar cargar automáticamente el archivo Excel
+            console.log('Intentando cargar automáticamente el archivo Excel...');
+            loadExcelFileAutomatically();
         });
     </script>
 </body>
